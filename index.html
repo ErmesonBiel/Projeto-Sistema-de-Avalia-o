@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sistema de Avaliação de Alunos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="pagina">
+
+  <h1>Sistema de Avaliação de Alunos</h1>
+  <p class="regras">
+    Regra usada: média = soma das notas / quantidade de notas.
+    Frequência mínima é 75%. Média maior ou igual a 7 é Aprovado,
+    entre 5 e 6.9 é Em Recuperação, menor que 5 é Reprovado.
+  </p>
+
+  <div class="caixa">
+    <h2>Cadastrar aluno</h2>
+
+    <div id="form-cadastro">
+      <div class="linha-form">
+        <div class="campo">
+          <label>Nome</label>
+          <input type="text" id="input-nome">
+        </div>
+        <div class="campo campo-pequeno">
+          <label>Frequência (%)</label>
+          <input type="number" id="input-freq" value="100">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Notas</label>
+        <div id="notas-list" class="notas-list"></div>
+        <button class="btn-secundario" onclick="adicionarCampoNota()">+ Adicionar nota</button>
+      </div>
+
+      <p id="erro"></p>
+
+      <div class="botoes-form">
+        <button class="btn-principal" onclick="salvarAluno()">Cadastrar aluno</button>
+        <button class="btn-secundario" onclick="cancelarEdicao()" id="btn-cancelar" style="display:none;">Cancelar edição</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="caixa">
+    <h2>Estatísticas</h2>
+    <div class="stats-grid">
+      <p>Média da turma <br><strong id="media-turma">-</strong></p>
+      <p>Maior média <br><strong id="maior-media">-</strong><br><span id="maior-nome">-</span></p>
+      <p>Menor média <br><strong id="menor-media">-</strong><br><span id="menor-nome">-</span></p>
+    </div>
+    <div class="contadores">
+      <span class="contador aprovado">Aprovados: <strong id="qtd-aprovado">0</strong></span>
+      <span class="contador recuperacao">Em recuperação: <strong id="qtd-recuperacao">0</strong></span>
+      <span class="contador reprovado">Reprovados: <strong id="qtd-reprovado">0</strong></span>
+    </div>
+  </div>
+
+  <div class="caixa">
+    <h2>Turma</h2>
+    <div id="filtros">
+      Filtrar por:
+      <button onclick="filtrar('todos')">Todos</button>
+      <button onclick="filtrar('aprovado')">Aprovados</button>
+      <button onclick="filtrar('recuperacao')">Em recuperação</button>
+      <button onclick="filtrar('reprovado')">Reprovados</button>
+    </div>
+
+    <div class="tabela-wrap">
+      <table id="tabela-alunos">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Notas</th>
+            <th>Frequência</th>
+            <th>Média</th>
+            <th>Situação</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="corpo-tabela">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p id="aviso"></p>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
