@@ -3,10 +3,8 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
-// serve o front-end (index.html, style.css, script.js) na mesma porta
 app.use(express.static("."));
 
-// "banco de dados" em memória (igual ao array de produtos do quadro)
 const alunos = [
   { id: 1, nome: "Ana Beatriz", frequencia: 96, notas: [8.5, 9, 8] },
   { id: 2, nome: "Carlos Eduardo", frequencia: 82, notas: [6, 5.5, 6.5] },
@@ -15,12 +13,10 @@ const alunos = [
 ];
 let proximoId = 5;
 
-// LISTAR
 app.get("/aluno", (req, res) => {
   return res.json(alunos);
 });
 
-// CADASTRAR (POST)
 app.post("/aluno", (req, res) => {
   const dados = req.body;
   const novo = {
@@ -33,7 +29,6 @@ app.post("/aluno", (req, res) => {
   return res.json({ message: "Dados cadastrados", aluno: novo });
 });
 
-// REMOVER (DELETE)
 app.delete("/aluno/:id", (req, res) => {
   const { id } = req.params;
   const index = alunos.findIndex((item) => item.id == id);
@@ -44,7 +39,6 @@ app.delete("/aluno/:id", (req, res) => {
   return res.status(404).json({ message: "Aluno não encontrado" });
 });
 
-// ATUALIZAR (PUT)
 app.put("/aluno/:id", (req, res) => {
   const { id } = req.params;
   const aluno = alunos.find((item) => item.id == id);
@@ -52,8 +46,6 @@ app.put("/aluno/:id", (req, res) => {
     return res.status(404).json({ message: "Aluno não encontrado" });
   }
   const dados = req.body;
-  // Object.assign altera o objeto que está dentro do array
-  // (fazer "aluno = dados" só trocaria a variável local e não mudaria a lista)
   Object.assign(aluno, dados, { id: aluno.id });
   return res.json({ message: "Atualizado", aluno });
 });
