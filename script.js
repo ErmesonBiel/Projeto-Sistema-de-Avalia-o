@@ -1,8 +1,8 @@
-// array que guarda todos os alunos cadastrados
-var alunos = [];
+// endereço do backend (Express)
+var API = "/aluno";
 
-// id que vai sendo incrementado a cada aluno novo
-var proximoId = 1;
+// cópia local dos alunos, que vem do backend
+var alunos = [];
 
 // guarda qual filtro está ativo (todos, aprovado, recuperacao ou reprovado)
 var filtroAtual = "todos";
@@ -10,15 +10,20 @@ var filtroAtual = "todos";
 // se estiver editando algum aluno, guarda o id dele aqui. se não tiver editando, fica null
 var idEditando = null;
 
-// alunos de exemplo pra não ficar tudo vazio
-alunos.push({ id: proximoId++, nome: "Ana Beatriz", frequencia: 96, notas: [8.5, 9, 8] });
-alunos.push({ id: proximoId++, nome: "Carlos Eduardo", frequencia: 82, notas: [6, 5.5, 6.5] });
-alunos.push({ id: proximoId++, nome: "Fernanda Costa", frequencia: 70, notas: [7, 8] });
-alunos.push({ id: proximoId++, nome: "João Pedro", frequencia: 91, notas: [4, 3.5, 5] });
+// busca a lista de alunos no backend e redesenha a tabela
+async function carregarAlunos() {
+  try {
+    var resposta = await fetch(API);
+    alunos = await resposta.json();
+    desenharTabela();
+  } catch (e) {
+    mostrarAviso("Não foi possível conectar ao servidor.");
+  }
+}
 
 // coloca os campos de nota (2 no começo) quando a página carrega
 criarCamposDeNota(2);
-desenharTabela();
+carregarAlunos();
 
 // cria os inputs de nota no formulário de cadastro
 // obs: usa a classe "form-nota-input", que é diferente da classe usada
@@ -87,7 +92,7 @@ function buscarAlunoPeloId(id) {
 }
 
 // salva um aluno novo, ou atualiza se estiver editando
-function salvarAluno() {
+async function salvarAluno() {
   var erro = document.getElementById("erro");
   erro.textContent = "";
 
@@ -125,21 +130,33 @@ function salvarAluno() {
     return;
   }
 
-  if (idEditando !== null) {
-    // é uma edição, então acha o aluno e troca os dados dele
-    var aluno = buscarAlunoPeloId(idEditando);
-    aluno.nome = nome;
-    aluno.frequencia = frequencia;
-    aluno.notas = notas;
-    mostrarAviso("Aluno atualizado!");
-  } else {
-    // é um cadastro novo
-    alunos.push({ id: proximoId++, nome: nome, frequencia: frequencia, notas: notas });
-    mostrarAviso("Aluno cadastrado!");
+  var dados = { nome: nome, frequencia: frequencia, notas: notas };
+
+  try {
+    if (idEditando !== null) {
+      // é uma edição: PUT /aluno/:id
+      await fetch(API + "/" + idEditando, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados)
+      });
+      mostrarAviso("Aluno atualizado!");
+    } else {
+      // é um cadastro novo: POST /aluno
+      await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dados)
+      });
+      mostrarAviso("Aluno cadastrado!");
+    }
+  } catch (e) {
+    erro.textContent = "erro ao conectar com o servidor";
+    return;
   }
 
   limparFormulario();
-  desenharTabela();
+  await carregarAlunos();
 }
 
 // deixa o formulário pronto pra editar um aluno que já existe
@@ -170,28 +187,41 @@ function limparFormulario() {
 }
 
 // remove um aluno da lista (pede confirmação antes da açao ser cncluida)
-function removerAluno(id) {
+async function removerAluno(id) {
   var aluno = buscarAlunoPeloId(id);
   if (!aluno) return;
 
   var confirmou = confirm("Remover o aluno " + aluno.nome + "?");
   if (!confirmou) return;
 
-  // filtra o array tirando o aluno com esse id
-  var novaLista = [];
-  for (var i = 0; i < alunos.length; i++) {
-    if (alunos[i].id !== id) {
-      novaLista.push(alunos[i]);
-    }
+  // DELETE /aluno/:id
+  try {
+    await fetch(API + "/" + id, { method: "DELETE" });
+  } catch (e) {
+    mostrarAviso("Erro ao conectar com o servidor.");
+    return;
   }
-  alunos = novaLista;
 
   if (idEditando === id) {
     limparFormulario();
   }
 
   mostrarAviso("Aluno removido.");
-  desenharTabela();
+  await carregarAlunos();
+}
+
+// manda uma atualização parcial do aluno pro backend (PUT)
+async function atualizarNoServidor(aluno) {
+  try {
+    await fetch(API + "/" + aluno.id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome: aluno.nome, frequencia: aluno.frequencia, notas: aluno.notas })
+    });
+  } catch (e) {
+    mostrarAviso("Erro ao conectar com o servidor.");
+  }
+  await carregarAlunos();
 }
 
 // muda o filtro e redesenha a tabela
@@ -220,7 +250,7 @@ function alterarNotaNaTabela(id, indiceNota, valor) {
   if (v > 10) v = 10;
 
   aluno.notas[indiceNota] = v;
-  desenharTabela();
+  atualizarNoServidor(aluno);
 }
 
 function alterarFrequenciaNaTabela(id, valor) {
@@ -233,7 +263,7 @@ function alterarFrequenciaNaTabela(id, valor) {
   if (v > 100) v = 100;
 
   aluno.frequencia = v;
-  desenharTabela();
+  atualizarNoServidor(aluno);
 }
 
 // essa é a função principal onde monta a tabela toda de novo e recalcula tudo
